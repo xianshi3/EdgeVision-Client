@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using OpenCvSharp;
 using OpenCvSharp.WpfExtensions;
 
@@ -17,6 +18,8 @@ namespace MachineVisionApp
         private Mat? _grayFrame;
         private CascadeClassifier? _faceCascade;
         private bool _isRunning;
+        private int _threshold1 = 100;
+        private int _threshold2 = 200;
 
         /// <summary>
         /// 初始化主窗口，设置摄像头、图像矩阵和人脸检测器
@@ -67,7 +70,7 @@ namespace MachineVisionApp
         }
 
         /// <summary>
-        /// 捕获视频帧并进行处理：转换为灰度图像，检测边缘，检测人脸，并在原始图像上绘制矩形
+        /// 捕获视频帧并进行处理:转换为灰度图像，检测边缘，检测人脸，并在原始图像上绘制矩形
         /// </summary>
         private void CaptureAndProcess()
         {
@@ -82,7 +85,7 @@ namespace MachineVisionApp
                 Cv2.CvtColor(_frame, _grayFrame, ColorConversionCodes.BGR2GRAY);
 
                 // 使用 Canny 边缘检测
-                Cv2.Canny(_grayFrame, _edges, 100, 200);
+                Cv2.Canny(_grayFrame, _edges, _threshold1, _threshold2);
 
                 // 人脸检测
                 OpenCvSharp.Rect[] faces = _faceCascade.DetectMultiScale(_grayFrame);
@@ -98,7 +101,31 @@ namespace MachineVisionApp
                 {
                     OriginalImage.Source = BitmapSourceConverter.ToBitmapSource(_frame);
                     EdgeImage.Source = BitmapSourceConverter.ToBitmapSource(_edges);
+                    FaceCountTextBlock.Text = $"检测到的人脸数量: {faces.Length}";
+                    //EdgeThresholdTextBlock.Text = $"目前边缘检测阈值: {_threshold1}, {_threshold2}";
                 });
+            }
+        }
+
+        /// <summary>
+        /// 处理应用阈值按钮点击事件
+        /// </summary>
+        /// <param name="sender">事件源</param>
+        /// <param name="e">包含事件数据的 RoutedEventArgs</param>
+        private void ApplyThresholdsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(Threshold1TextBox.Text, out int threshold1) && int.TryParse(Threshold2TextBox.Text, out int threshold2))
+            {
+                _threshold1 = threshold1;
+                _threshold2 = threshold2;
+                //EdgeThresholdTextBlock.Text = $"边缘检测阈值: {_threshold1}, {_threshold2}";
+
+                // 不需要重新启动捕获和处理过程，因为 _threshold1 和 _threshold2 已经更新
+                // Cv2.Canny(_grayFrame, _edges, _threshold1, _threshold2) 会在下一次循环中使用新的阈值
+            }
+            else
+            {
+                MessageBox.Show("请输入有效的整数作为阈值！");
             }
         }
     }
