@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 using OpenCvSharp;
 using OpenCvSharp.WpfExtensions;
 
@@ -43,18 +44,8 @@ namespace MachineVisionApp
         /// <param name="e">包含事件数据的RoutedEventArgs</param>
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // 初始化摄像头
-            _capture = new VideoCapture(0); // 0 表示默认摄像头
-            if (!_capture.IsOpened())
-            {
-                MessageBox.Show("无法打开摄像头！");
-                return;
-            }
-
-            _isRunning = true;
-
-            // 启动视频捕获和处理
-            Task.Run(() => CaptureAndProcess());
+            // 默认情况下摄像头是关闭的
+            _isRunning = false;
         }
 
         /// <summary>
@@ -102,7 +93,6 @@ namespace MachineVisionApp
                     OriginalImage.Source = BitmapSourceConverter.ToBitmapSource(_frame);
                     EdgeImage.Source = BitmapSourceConverter.ToBitmapSource(_edges);
                     FaceCountTextBlock.Text = $"检测到的人脸数量: {faces.Length}";
-                    //EdgeThresholdTextBlock.Text = $"目前边缘检测阈值: {_threshold1}, {_threshold2}";
                 });
             }
         }
@@ -118,14 +108,87 @@ namespace MachineVisionApp
             {
                 _threshold1 = threshold1;
                 _threshold2 = threshold2;
-                //EdgeThresholdTextBlock.Text = $"边缘检测阈值: {_threshold1}, {_threshold2}";
-
-                // 不需要重新启动捕获和处理过程，因为 _threshold1 和 _threshold2 已经更新
-                // Cv2.Canny(_grayFrame, _edges, _threshold1, _threshold2) 会在下一次循环中使用新的阈值
             }
             else
             {
                 MessageBox.Show("请输入有效的整数作为阈值！");
+            }
+        }
+
+        /// <summary>
+        /// 处理开启摄像头按钮点击事件
+        /// </summary>
+        /// <param name="sender">事件源</param>
+        /// <param name="e">包含事件数据的 RoutedEventArgs</param>
+        private void StartCameraButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_capture == null || !_capture.IsOpened())
+            {
+                _capture = new VideoCapture(0); // 0 表示默认摄像头
+                if (!_capture.IsOpened())
+                {
+                    MessageBox.Show("无法打开摄像头！");
+                    return;
+                }
+
+                _isRunning = true;
+                Task.Run(() => CaptureAndProcess());
+            }
+        }
+
+        /// <summary>
+        /// 处理关闭摄像头按钮点击事件
+        /// </summary>
+        /// <param name="sender">事件源</param>
+        /// <param name="e">包含事件数据的 RoutedEventArgs</param>
+        private void StopCameraButton_Click(object sender, RoutedEventArgs e)
+        {
+            _isRunning = false;
+            _capture?.Release();
+        }
+
+        /// <summary>
+        /// 处理加载图片按钮点击事件
+        /// </summary>
+        /// <param name="sender">事件源</param>
+        /// <param name="e">包含事件数据的 RoutedEventArgs</param>
+        private void LoadImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp|所有文件|*.*"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                Mat image = Cv2.ImRead(openFileDialog.FileName);
+                if (image.Empty())
+                {
+                    MessageBox.Show("无法加载图片！");
+                    return;
+                }
+
+                // 转换为灰度图像
+                Mat grayImage = new Mat();
+                Cv2.CvtColor(image, grayImage, ColorConversionCodes.BGR2GRAY);
+
+                // 使用 Canny 边缘检测
+                Mat edges = new Mat();
+                Cv2.Canny(grayImage, edges, _threshold1, _threshold2);
+
+                // 人脸检测
+                OpenCvSharp.Rect[] faces = _faceCascade.DetectMultiScale(grayImage);
+
+                // 在原始图像上绘制矩形
+                foreach (OpenCvSharp.Rect face in faces)
+                {
+                    Cv2.Rectangle(image, face, Scalar.Red, 2);
+                }
+
+                // 更新界面
+                OriginalImage.Source = BitmapSourceConverter.ToBitmapSource(image);
+                EdgeImage.Source = BitmapSourceConverter.ToBitmapSource(edges);
+                FaceCountTextBlock.Text = $"检测到的人脸数量: {faces.Length}";
             }
         }
     }
