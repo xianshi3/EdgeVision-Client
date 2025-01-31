@@ -6,6 +6,9 @@ using OpenCvSharp.WpfExtensions;
 
 namespace MachineVisionApp
 {
+    /// <summary>
+    /// 主窗口类，用于捕捉视频并进行处理
+    /// </summary>
     public partial class MainWindow : System.Windows.Window
     {
         private VideoCapture? _capture;
@@ -15,6 +18,9 @@ namespace MachineVisionApp
         private CascadeClassifier? _faceCascade;
         private bool _isRunning;
 
+        /// <summary>
+        /// 初始化主窗口，设置摄像头、图像矩阵和人脸检测器
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -27,6 +33,11 @@ namespace MachineVisionApp
             Closed += MainWindow_Closed;
         }
 
+        /// <summary>
+        /// 当窗口加载时初始化摄像头并启动视频捕获和处理
+        /// </summary>
+        /// <param name="sender">事件源</param>
+        /// <param name="e">包含事件数据的RoutedEventArgs</param>
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // 初始化摄像头
@@ -43,6 +54,11 @@ namespace MachineVisionApp
             Task.Run(() => CaptureAndProcess());
         }
 
+        /// <summary>
+        /// 当窗口关闭时停止摄像头并释放资源
+        /// </summary>
+        /// <param name="sender">事件源</param>
+        /// <param name="e">包含事件数据的EventArgs</param>
         private void MainWindow_Closed(object sender, EventArgs e)
         {
             // 停止摄像头
@@ -50,6 +66,9 @@ namespace MachineVisionApp
             _capture?.Release();
         }
 
+        /// <summary>
+        /// 捕获视频帧并进行处理：转换为灰度图像，检测边缘，检测人脸，并在原始图像上绘制矩形
+        /// </summary>
         private void CaptureAndProcess()
         {
             while (_isRunning)
