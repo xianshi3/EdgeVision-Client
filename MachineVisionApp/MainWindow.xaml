@@ -1,0 +1,17 @@
+﻿<Window x:Class="MachineVisionApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Machine Vision App" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 原始视频流 -->
+        <Image x:Name="OriginalImage" Grid.Column="0" Stretch="Uniform"/>
+
+        <!-- 边缘检测结果 -->
+        <Image x:Name="EdgeImage" Grid.Column="1" Stretch="Uniform"/>
+    </Grid>
+</Window>
