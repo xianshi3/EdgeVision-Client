@@ -13,30 +13,30 @@ This project is a Windows-based machine vision application developed using WPF (
 
 ## How It Works
 - When the application starts, the camera is turned off by default.
-- Users can start video capture by clicking the 'Start Camera' button. The application then continuously captures video frames and processes them in a separate task to avoid blocking the UI thread.
-- Users can stop video capture and release the camera resources by clicking the 'Stop Camera' button.
-- Users can load an image by clicking the 'Load Image' button and select an image file from their local storage. The application will then process the image and display the results.
+- Users can start video capture by clicking the 'Start Camera' button. The application then continuously captures video frames 和 processes them in a separate task to avoid blocking the UI thread.
+- Users can stop video capture 和 release the camera resources by clicking the 'Stop Camera' button.
+- Users can load an image by clicking the 'Load Image' button 和 select an image file from their local storage. The application will then process the image 和 display the results.
 - The 'Apply Thresholds' button allows users to set custom thresholds for the Canny edge detector, enhancing the flexibility of edge detection.
 
 ## Code Structure
 - The code is organized into a single class, `MainWindow`, which inherits from `System.Windows.Window`.
 - It initializes the necessary components such as `VideoCapture` for video capturing, `Mat` objects for storing image frames, and a `CascadeClassifier` for face detection.
 - Event handlers (`MainWindow_Loaded`, `MainWindow_Closed`, `StartCameraButton_Click`, `StopCameraButton_Click`, `LoadImageButton_Click`, `ApplyThresholdsButton_Click`) manage the application's lifecycle and user interactions.
-- The `CaptureAndProcess` method contains the core logic for processing video frames, while similar processing is done for loaded images in the `LoadImageButton_Click` method.
+- 该 `CaptureAndProcess` method contains the core logic for processing video frames, while similar processing is done for loaded images in the `LoadImageButton_Click` method.
 
 ## Requirements
-- .NET Framework 4.7.2 or later
+- .NET8
 - OpenCvSharp library for .NET
 - OpenCvSharp.WpfExtensions for displaying images in WPF
-- A working webcam for video capture functionality
+- WPF
 
 ## Usage
 1. Open the application.
-2. Click 'Start Camera' to begin capturing and processing video frames.
-3. Adjust the Canny edge detection thresholds using the provided textboxes and click 'Apply Thresholds'.
+2. Click 'Start Camera' to begin capturing 和 processing video frames.
+3. Adjust the Canny edge detection thresholds using the provided textboxes 和 click 'Apply Thresholds'.
 4. Click 'Stop Camera' to stop capturing video frames.
-5. Click 'Load Image' to select and process an image from your local storage.
-6. Observe the processed images and the number of detected faces in the UI.
+5. Click 'Load Image' to select 和 process an image from your local storage.
+6. Observe the processed images 和 the number of detected faces in the UI.
 
 ## License
 This project is licensed under the MIT License.
