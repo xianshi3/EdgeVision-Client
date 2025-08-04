@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace MachineVisionApp
+namespace MachineVisionApp.Views
 {
     public partial class CustomTitleBar : UserControl
     {
@@ -21,12 +21,10 @@ namespace MachineVisionApp
         {
             var window = Window.GetWindow(this);
             if (window == null) return;
-
             // 使用系统原生最大化/还原功能
             window.WindowState = window.WindowState == WindowState.Maximized
                 ? WindowState.Normal
                 : WindowState.Maximized;
-
             UpdateButtonIcon();
         }
 
@@ -34,7 +32,6 @@ namespace MachineVisionApp
         {
             var window = Window.GetWindow(this);
             if (window == null) return;
-
             // 根据窗口状态更新图标
             MaximizeButton.Content = window.WindowState == WindowState.Maximized
                 ? "\uE923"  // Segoe MDL2 Assets 还原图标
