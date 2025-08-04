@@ -12,11 +12,14 @@ namespace MachineVisionApp.Components
         private Mat _grayFrame;
         private bool _isRunning;
 
+        public event Action<Mat, Mat> OnFrameCaptured;
+
         public VideoCaptureComponent()
         {
             _capture = new VideoCapture();
             _frame = new Mat();
             _grayFrame = new Mat();
+            OnFrameCaptured = (frame, grayFrame) => { }; // 空操作
         }
 
         public void StartCapture()
@@ -81,7 +84,5 @@ namespace MachineVisionApp.Components
             int height = (int)_capture.Get(VideoCaptureProperties.FrameHeight);
             return new System.Windows.Size(width, height);
         }
-
-        public event Action<Mat, Mat> OnFrameCaptured;
     }
 }
