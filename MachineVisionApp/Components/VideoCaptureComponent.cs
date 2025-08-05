@@ -13,23 +13,26 @@ namespace MachineVisionApp.Components
         private bool _isRunning;
 
         public event Action<Mat, Mat> OnFrameCaptured;
+        public event Action<string?> OnCaptureStopped; // 关闭事件，参数为异常消息
 
         public VideoCaptureComponent()
         {
             _capture = new VideoCapture();
             _frame = new Mat();
             _grayFrame = new Mat();
-            OnFrameCaptured = (frame, grayFrame) => { }; // 空操作
+            OnFrameCaptured = (frame, grayFrame) => { };
+            OnCaptureStopped = (reason) => { };
         }
 
         public void StartCapture()
         {
             try
             {
-                _capture = new VideoCapture(0); // 0 表示默认摄像头
+                _capture = new VideoCapture(0);
                 if (!_capture.IsOpened())
                 {
                     MessageBox.Show("无法打开摄像头！");
+                    OnCaptureStopped?.Invoke("无法打开摄像头");
                     return;
                 }
                 _isRunning = true;
@@ -38,6 +41,7 @@ namespace MachineVisionApp.Components
             catch (Exception ex)
             {
                 MessageBox.Show($"打开摄像头时出错: {ex.Message}");
+                OnCaptureStopped?.Invoke($"打开摄像头时异常: {ex.Message}");
             }
         }
 
@@ -45,6 +49,7 @@ namespace MachineVisionApp.Components
         {
             _isRunning = false;
             _capture?.Release();
+            OnCaptureStopped?.Invoke(null); // 正常停止，原因为空
         }
 
         private void CaptureAndProcess()
@@ -53,9 +58,11 @@ namespace MachineVisionApp.Components
             {
                 while (_isRunning)
                 {
-                    _capture.Read(_frame);
-                    if (_frame.Empty())
-                        continue;
+                    if (!_capture.Read(_frame) || _frame.Empty())
+                    {
+                        OnCaptureStopped?.Invoke("摄像头停止工作或关闭");
+                        break;
+                    }
 
                     Cv2.CvtColor(_frame, _grayFrame, ColorConversionCodes.BGR2GRAY);
                     OnFrameCaptured?.Invoke(_frame, _grayFrame);
@@ -63,21 +70,20 @@ namespace MachineVisionApp.Components
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"捕获和处理图像时出错: {ex.Message}");
+                OnCaptureStopped?.Invoke($"捕获异常: {ex.Message}");
             }
             finally
             {
                 _capture?.Release();
+                _isRunning = false;
             }
         }
 
-        // 获取摄像头帧率
         public double GetFrameRate()
         {
             return _capture.Get(VideoCaptureProperties.Fps);
         }
 
-        // 获取摄像头分辨率
         public System.Windows.Size GetResolution()
         {
             int width = (int)_capture.Get(VideoCaptureProperties.FrameWidth);

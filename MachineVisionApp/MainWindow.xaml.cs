@@ -19,15 +19,24 @@ namespace MachineVisionApp
         public MainWindow()
         {
             InitializeComponent();
+
             _faceDetectionComponent = new Components.FaceDetectionComponent("haarcascade_frontalface_default.xml");
             _edgeDetectionComponent = new Components.EdgeDetectionComponent();
             _videoCaptureComponent = new Components.VideoCaptureComponent();
             _imageDisplayComponent = new Components.ImageDisplayComponent(OriginalImage, EdgeImage);
             _thresholdParameterComponent = new Components.ThresholdParameterComponent(Threshold1TextBox, Threshold2TextBox, ApplyThresholdsButton);
+
             _videoCaptureComponent.OnFrameCaptured += ProcessFrame;
+            _videoCaptureComponent.OnCaptureStopped += OnCaptureStoppedHandler;
+
             _thresholdParameterComponent.OnThresholdsChanged += UpdateThresholds;
+
             Loaded += MainWindow_Loaded;
             Closed += MainWindow_Closed;
+
+            // 初始化按钮状态
+            StartCameraButton.IsEnabled = true;
+            StopCameraButton.IsEnabled = false;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -49,7 +58,6 @@ namespace MachineVisionApp
                 _imageDisplayComponent.UpdateImages(originalFrame, edges);
                 FaceCountTextBlock.Dispatcher.Invoke(() => FaceCountTextBlock.Text = $"检测到的人脸数量: {faceCount}");
 
-                // 更新摄像头数据
                 UpdateCameraData();
             }
             catch (Exception ex)
@@ -80,11 +88,15 @@ namespace MachineVisionApp
         private void StartCameraButton_Click(object sender, RoutedEventArgs e)
         {
             _videoCaptureComponent.StartCapture();
+            StartCameraButton.IsEnabled = false;
+            StopCameraButton.IsEnabled = true;
         }
 
         private void StopCameraButton_Click(object sender, RoutedEventArgs e)
         {
             _videoCaptureComponent.StopCapture();
+            StopCameraButton.IsEnabled = false;
+            StartCameraButton.IsEnabled = true;
         }
 
         private void LoadImageButton_Click(object sender, RoutedEventArgs e)
@@ -117,7 +129,6 @@ namespace MachineVisionApp
             }
         }
 
-        // 更新摄像头数据
         private void UpdateCameraData()
         {
             try
@@ -131,6 +142,28 @@ namespace MachineVisionApp
             {
                 CameraDataTextBlock.Dispatcher.Invoke(() => CameraDataTextBlock.Text = $"摄像头数据: 无法获取数据 - {ex.Message}");
             }
+        }
+
+        private void OnCaptureStoppedHandler(string? reason)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                string warningText = "摄像头已关闭";
+                if (!string.IsNullOrEmpty(reason))
+                    warningText += $"，原因: {reason}";
+
+                FaceCountTextBlock.Text = warningText;
+
+                // 清空图像显示区域
+                OriginalImage.Source = null;
+                EdgeImage.Source = null;
+
+                CameraDataTextBlock.Text = "摄像头数据: 无法获取，摄像头已关闭";
+
+                // 按钮状态切换
+                StopCameraButton.IsEnabled = false;
+                StartCameraButton.IsEnabled = true;
+            });
         }
     }
 }
