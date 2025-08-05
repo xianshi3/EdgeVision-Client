@@ -154,6 +154,7 @@ namespace MachineVisionApp
 
                 FaceCountTextBlock.Text = warningText;
 
+
                 // 清空图像显示区域
                 OriginalImage.Source = null;
                 EdgeImage.Source = null;
@@ -165,5 +166,6 @@ namespace MachineVisionApp
                 StartCameraButton.IsEnabled = true;
             });
         }
+
     }
 }
