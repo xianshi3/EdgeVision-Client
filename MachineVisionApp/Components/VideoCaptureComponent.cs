@@ -14,6 +14,7 @@ namespace MachineVisionApp.Components
         private readonly object _lock = new();
 
         public event Action<Mat, Mat> OnFrameCaptured = delegate { };
+        public event Action<string?> OnCaptureError = delegate { };
         public event Action<string?> OnCaptureStopped = delegate { };
 
         public void StartCapture()
@@ -21,15 +22,15 @@ namespace MachineVisionApp.Components
             lock (_lock)
             {
                 if (_isRunning)
-                    return; // 已经在运行，忽略重复调用
+                    return; // 已运行，忽略重复调用
 
                 try
                 {
-                    _capture = new VideoCapture(0);
+                    _capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW); // 用DirectShow提高稳定性
                     if (!_capture.IsOpened())
                     {
                         MessageBox.Show("无法打开摄像头！");
-                        OnCaptureStopped?.Invoke("无法打开摄像头");
+                        OnCaptureError?.Invoke("无法打开摄像头");
                         _capture.Release();
                         _capture = null;
                         return;
@@ -38,12 +39,12 @@ namespace MachineVisionApp.Components
                     _frame = new Mat();
                     _grayFrame = new Mat();
                     _isRunning = true;
-                    _ = CaptureAndProcessAsync(); // 异步启动，忽略返回
+                    _ = CaptureAndProcessAsync();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"打开摄像头时出错: {ex.Message}");
-                    OnCaptureStopped?.Invoke($"打开摄像头时异常: {ex.Message}");
+                    OnCaptureError?.Invoke($"打开摄像头异常: {ex.Message}");
                     _isRunning = false;
                 }
             }
@@ -54,10 +55,9 @@ namespace MachineVisionApp.Components
             lock (_lock)
             {
                 if (!_isRunning)
-                    return; // 未运行，无需停止
+                    return;
 
                 _isRunning = false;
-
                 try
                 {
                     _capture?.Release();
@@ -65,7 +65,7 @@ namespace MachineVisionApp.Components
                 }
                 catch { }
 
-                OnCaptureStopped?.Invoke(null); // 正常停止，无异常原因
+                OnCaptureStopped?.Invoke("摄像头已停止");
             }
         }
 
@@ -84,8 +84,7 @@ namespace MachineVisionApp.Components
                     bool readSuccess = _capture.Read(_frame);
                     if (!readSuccess || _frame.Empty())
                     {
-                        // 不直接退出，给摄像头一些缓冲时间重试
-                        OnCaptureStopped?.Invoke("摄像头读取失败或帧为空，正在尝试重新读取...");
+                        OnCaptureError?.Invoke("摄像头读取失败或帧为空，正在重试...");
                         await Task.Delay(100);
                         continue;
                     }
@@ -93,13 +92,12 @@ namespace MachineVisionApp.Components
                     Cv2.CvtColor(_frame, _grayFrame, ColorConversionCodes.BGR2GRAY);
                     OnFrameCaptured?.Invoke(_frame, _grayFrame);
 
-                    await Task.Delay(30); // 控制帧率，约33fps
+                    await Task.Delay(30);
                 }
             }
             catch (Exception ex)
             {
-                string errMsg = $"捕获线程异常：{ex.GetType().Name}，消息：{ex.Message}";
-                OnCaptureStopped?.Invoke(errMsg);
+                OnCaptureError?.Invoke($"捕获线程异常：{ex.Message}");
             }
             finally
             {
@@ -111,6 +109,7 @@ namespace MachineVisionApp.Components
                 catch { }
 
                 _isRunning = false;
+                OnCaptureStopped?.Invoke("摄像头已停止");
             }
         }
 
